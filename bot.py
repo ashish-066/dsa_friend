@@ -138,4 +138,8 @@ async def on_ready():
     print(f"Logged in as {bot.user}")
     bot.loop.create_task(potd_scheduler())
 
-bot.run(DISCORD_TOKEN)
+if __name__ == "__main__":
+    try:
+        bot.run(DISCORD_TOKEN)
+    except Exception as e:
+        print("Bot crashed:", e)
