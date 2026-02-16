@@ -95,7 +95,7 @@ def fetch_leetcode_potd():
 # SCHEDULED TASKS
 # --------------------------
 
-@tasks.loop(time=datetime.strptime("01:05", "%H:%M").time())
+@tasks.loop(time=datetime.strptime("19:44", "%H:%M").time())
 async def potd_task():
     channel = bot.get_channel(CHANNEL_ID)
     potd = fetch_leetcode_potd()
