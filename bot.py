@@ -6,36 +6,32 @@ import os
 import re
 from html import unescape
 
-# --------------------------
-# ENV VARIABLES
-# --------------------------
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
+CHANNEL_IDD = int(os.getenv("CHANNEL_IDD"))
 
-# --------------------------
-# BOT SETUP
-# --------------------------
+
 
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# --------------------------
-# HTML CLEANER
-# --------------------------
-
 def clean_html(raw_html):
-    clean = re.sub('<.*?>', '', raw_html)
-    return unescape(clean)
+    text = re.sub('<.*?>', '', raw_html)
+
+    text = unescape(text)
+
+    text = re.sub(r'[ \t]+', ' ', text)
+
+    text = re.sub(r'\n\s*\n+', '\n\n', text)
+
+    return text.strip()
 
 def split_message(text, limit=1900):
     return [text[i:i+limit] for i in range(0, len(text), limit)]
 
-# --------------------------
-# LEETCODE POTD FETCH
-# --------------------------
 
 def fetch_leetcode_potd():
     url = "https://leetcode.com/graphql"
@@ -91,16 +87,12 @@ def fetch_leetcode_potd():
         "tags": [tag["name"] for tag in question["topicTags"]]
     }
 
-# --------------------------
-# SCHEDULED TASKS
-# --------------------------
 
-@tasks.loop(time=datetime.strptime("19:44", "%H:%M").time())
+@tasks.loop(time=datetime.strptime("03:30", "%H:%M").time())
 async def potd_task():
     channel = bot.get_channel(CHANNEL_ID)
     potd = fetch_leetcode_potd()
 
-    # Send to sheet
     requests.post(WEBHOOK_URL, json={
         "type": "potd_add",
         "date": potd["date"],
@@ -127,33 +119,30 @@ async def potd_task():
         await channel.send(chunk)
 
 
-@tasks.loop(time=datetime.strptime("19:00", "%H:%M").time())
+@tasks.loop(time=datetime.strptime("13:30", "%H:%M").time())
 async def reminder_7pm():
-    channel = bot.get_channel(CHANNEL_ID)
+    channel = bot.get_channel(CHANNEL_IDD)
     await channel.send(
         "⚠️ Reminder: Solve at least one DSA problem today.\n"
         "Your streak will break if you skip."
     )
 
 
-@tasks.loop(time=datetime.strptime("21:00", "%H:%M").time())
+@tasks.loop(time=datetime.strptime("15:30", "%H:%M").time())
 async def reminder_9pm():
-    channel = bot.get_channel(CHANNEL_ID)
+    channel = bot.get_channel(CHANNEL_IDD)
     await channel.send(
         "⚠️ Still time left. Solve one problem to protect your streak."
     )
 
 
-@tasks.loop(time=datetime.strptime("22:00", "%H:%M").time())
+@tasks.loop(time=datetime.strptime("16:30", "%H:%M").time())
 async def reminder_10pm():
-    channel = bot.get_channel(CHANNEL_ID)
+    channel = bot.get_channel(CHANNEL_IDD)
     await channel.send(
         "⚠️ Don't forget to solve today's LeetCode POTD."
     )
 
-# --------------------------
-# COMMANDS
-# --------------------------
 
 @bot.command()
 async def solve(ctx, platform, difficulty, link, time):
@@ -207,9 +196,6 @@ async def potd_streak(ctx):
     data = r.json()
     await ctx.send(f"🔥 POTD Streak: {data['streak']}")
 
-# --------------------------
-# START TASKS
-# --------------------------
 
 @bot.event
 async def on_ready():
@@ -220,9 +206,6 @@ async def on_ready():
     reminder_9pm.start()
     reminder_10pm.start()
 
-# --------------------------
-# RUN BOT
-# --------------------------
 
 if __name__ == "__main__":
     bot.run(DISCORD_TOKEN)
